@@ -1,4 +1,4 @@
-import {QRCodeCanvas, QRCodeSVG} from '..';
+import {QRCodeSVG} from '..';
 import React, {useRef} from 'react';
 
 function downloadStringAsFile(data: string, filename: string) {
@@ -9,19 +9,7 @@ function downloadStringAsFile(data: string, filename: string) {
 }
 
 function DownloadDemo() {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
-
-  function onCanvasButtonClick() {
-    const node = canvasRef.current;
-    if (node == null) {
-      return;
-    }
-    // For canvas, we just extract the image data and send that directly.
-    const dataURI = node.toDataURL('image/png');
-
-    downloadStringAsFile(dataURI, 'qrcode-canvas.png');
-  }
 
   function onSVGButtonClick() {
     const node = svgRef.current;
@@ -56,12 +44,6 @@ function DownloadDemo() {
       </p>
 
       <div className="container">
-        <div>
-          <QRCodeCanvas ref={canvasRef} value="hello world" />
-          <button onClick={onCanvasButtonClick} style={{display: 'block'}}>
-            download canvas
-          </button>
-        </div>
         <div>
           <QRCodeSVG ref={svgRef} value="hello world" />
           <button onClick={onSVGButtonClick} style={{display: 'block'}}>

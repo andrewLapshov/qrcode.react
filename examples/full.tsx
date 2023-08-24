@@ -1,4 +1,4 @@
-import {QRCodeSVG, QRCodeCanvas} from '..';
+import {QRCodeSVG} from '..';
 import React, {useState} from 'react';
 
 function FullDemo() {
@@ -44,7 +44,6 @@ function FullDemo() {
 />`;
   }
   const svgCode = makeExampleCode('QRCodeSVG');
-  const canvasCode = makeExampleCode('QRCodeCanvas');
 
   const renderProps = {
     value,
@@ -258,22 +257,6 @@ function FullDemo() {
           </div>
 
           <QRCodeSVG {...renderProps} />
-        </div>
-
-        <div>
-          <h2>
-            <pre>QRCodeCanvas</pre>
-          </h2>
-          <div>
-            <textarea
-              rows={canvasCode.split('\n').length}
-              cols={80}
-              readOnly={true}
-              value={canvasCode}
-            />
-          </div>
-
-          <QRCodeCanvas {...renderProps} />
         </div>
       </div>
     </div>

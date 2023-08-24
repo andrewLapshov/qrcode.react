@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: ISC
  */
 
-import React, {useRef, useEffect, useState, useCallback} from 'react';
+import React from 'react';
 import type {CSSProperties} from 'react';
 import qrcodegen from './third-party/qrcodegen';
 
@@ -40,7 +40,6 @@ type QRProps = {
   imageSettings?: ImageSettings;
   title?: string;
 };
-type QRPropsCanvas = QRProps & React.CanvasHTMLAttributes<HTMLCanvasElement>;
 type QRPropsSVG = QRProps & React.SVGAttributes<SVGSVGElement>;
 
 const DEFAULT_SIZE = 128;
@@ -166,172 +165,6 @@ function getMarginSize(includeMargin: boolean, marginSize?: number): number {
   return includeMargin ? SPEC_MARGIN_SIZE : DEFAULT_MARGIN_SIZE;
 }
 
-// For canvas we're going to switch our drawing mode based on whether or not
-// the environment supports Path2D. We only need the constructor to be
-// supported, but Edge doesn't actually support the path (string) type
-// argument. Luckily it also doesn't support the addPath() method. We can
-// treat that as the same thing.
-const SUPPORTS_PATH2D = (function () {
-  try {
-    new Path2D().addPath(new Path2D());
-  } catch (e) {
-    return false;
-  }
-  return true;
-})();
-
-const QRCodeCanvas = React.forwardRef(function QRCodeCanvas(
-  props: QRPropsCanvas,
-  forwardedRef: React.ForwardedRef<HTMLCanvasElement>
-) {
-  const {
-    value,
-    size = DEFAULT_SIZE,
-    level = DEFAULT_LEVEL,
-    bgColor = DEFAULT_BGCOLOR,
-    fgColor = DEFAULT_FGCOLOR,
-    includeMargin = DEFAULT_INCLUDEMARGIN,
-    marginSize,
-    style,
-    imageSettings,
-    ...otherProps
-  } = props;
-  const imgSrc = imageSettings?.src;
-  const _canvas = useRef<HTMLCanvasElement | null>(null);
-  const _image = useRef<HTMLImageElement>(null);
-
-  // Set the local ref (_canvas) and also the forwarded ref from outside
-  const setCanvasRef = useCallback(
-    (node: HTMLCanvasElement | null) => {
-      _canvas.current = node;
-      if (typeof forwardedRef === 'function') {
-        forwardedRef(node);
-      } else if (forwardedRef) {
-        forwardedRef.current = node;
-      }
-    },
-    [forwardedRef]
-  );
-
-  // We're just using this state to trigger rerenders when images load. We
-  // Don't actually read the value anywhere. A smarter use of useEffect would
-  // depend on this value.
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [isImgLoaded, setIsImageLoaded] = useState(false);
-
-  useEffect(() => {
-    // Always update the canvas. It's cheap enough and we want to be correct
-    // with the current state.
-    if (_canvas.current != null) {
-      const canvas = _canvas.current;
-
-      const ctx = canvas.getContext('2d');
-      if (!ctx) {
-        return;
-      }
-
-      let cells = qrcodegen.QrCode.encodeText(
-        value,
-        ERROR_LEVEL_MAP[level]
-      ).getModules();
-
-      const margin = getMarginSize(includeMargin, marginSize);
-      const numCells = cells.length + margin * 2;
-      const calculatedImageSettings = getImageSettings(
-        cells,
-        size,
-        margin,
-        imageSettings
-      );
-
-      const image = _image.current;
-      const haveImageToRender =
-        calculatedImageSettings != null &&
-        image !== null &&
-        image.complete &&
-        image.naturalHeight !== 0 &&
-        image.naturalWidth !== 0;
-
-      if (haveImageToRender) {
-        if (calculatedImageSettings.excavation != null) {
-          cells = excavateModules(cells, calculatedImageSettings.excavation);
-        }
-      }
-
-      // We're going to scale this so that the number of drawable units
-      // matches the number of cells. This avoids rounding issues, but does
-      // result in some potentially unwanted single pixel issues between
-      // blocks, only in environments that don't support Path2D.
-      const pixelRatio = window.devicePixelRatio || 1;
-      canvas.height = canvas.width = size * pixelRatio;
-      const scale = (size / numCells) * pixelRatio;
-      ctx.scale(scale, scale);
-
-      // Draw solid background, only paint dark modules.
-      ctx.fillStyle = bgColor;
-      ctx.fillRect(0, 0, numCells, numCells);
-
-      ctx.fillStyle = fgColor;
-      if (SUPPORTS_PATH2D) {
-        // $FlowFixMe: Path2D c'tor doesn't support args yet.
-        ctx.fill(new Path2D(generatePath(cells, margin)));
-      } else {
-        cells.forEach(function (row, rdx) {
-          row.forEach(function (cell, cdx) {
-            if (cell) {
-              ctx.fillRect(cdx + margin, rdx + margin, 1, 1);
-            }
-          });
-        });
-      }
-
-      if (haveImageToRender) {
-        ctx.drawImage(
-          image,
-          calculatedImageSettings.x + margin,
-          calculatedImageSettings.y + margin,
-          calculatedImageSettings.w,
-          calculatedImageSettings.h
-        );
-      }
-    }
-  });
-
-  // Ensure we mark image loaded as false here so we trigger updating the
-  // canvas in our other effect.
-  useEffect(() => {
-    setIsImageLoaded(false);
-  }, [imgSrc]);
-
-  const canvasStyle = {height: size, width: size, ...style};
-  let img = null;
-  if (imgSrc != null) {
-    img = (
-      <img
-        src={imgSrc}
-        key={imgSrc}
-        style={{display: 'none'}}
-        onLoad={() => {
-          setIsImageLoaded(true);
-        }}
-        ref={_image}
-      />
-    );
-  }
-  return (
-    <>
-      <canvas
-        style={canvasStyle}
-        height={size}
-        width={size}
-        ref={setCanvasRef}
-        {...otherProps}
-      />
-      {img}
-    </>
-  );
-});
-
 const QRCodeSVG = React.forwardRef(function QRCodeSVG(
   props: QRPropsSVG,
   forwardedRef: React.ForwardedRef<SVGSVGElement>
@@ -408,4 +241,4 @@ const QRCodeSVG = React.forwardRef(function QRCodeSVG(
   );
 });
 
-export {QRCodeCanvas, QRCodeSVG};
+export {QRCodeSVG};

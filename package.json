@@ -1,6 +1,6 @@
 {
   "name": "qrcode.react-x",
-  "version": "3.1.1",
+  "version": "3.1.5",
   "description": "React component to generate QR codes",
   "keywords": [
     "react",
@@ -29,11 +29,10 @@
     "test": "jest",
     "typecheck": "tsc --noEmit"
   },
-  "sideEffects": false,
   "author": "Paul O’Shannessy <paul@oshannessy.com>",
   "repository": {
     "type": "git",
-    "url": "https://github.com/zpao/qrcode.react.git"
+    "url": "https://github.com/andrewLapshov/qrcode.react.git"
   },
   "license": "ISC",
   "files": [
